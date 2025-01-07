@@ -6,6 +6,8 @@ Ansible playbook to help with update management of Flowmon appliances
 This set of scripts is prepared to help you with updating multiple Flowmon appliances. It should be run from a Flowmon Collector, but it can be started from any Linux operating system where Python 3 installed (at least version 3.6) with a pip tool.
 
 There is an installation bash script which is used to install ansible into Virtual Environment on the collector. But it can be used without this once you know how to use Ansible.
+
+**This is intent only for appliances which aren't part of the DA architecture, that one has it's own distribution of packages.**
 ## Prerequisites
 This system is using Ansible with SSH access with a key. For everything to work you would need to generate SSH keys if you haven’t done so yet. It can be done by running
 ```
