@@ -7,7 +7,7 @@ This set of scripts is prepared to help you with updating multiple Flowmon appli
 
 There is an installation bash script which is used to install ansible into Virtual Environment on the collector. But it can be used without this once you know how to use Ansible.
 
-**This is intent only for appliances which aren't part of the DA architecture, that one has it's own distribution of packages.**
+>**This is intent only for appliances which aren't part of the DA architecture, that one has it's own distribution of packages.**
 ## Prerequisites
 This system is using Ansible with SSH access with a key. For everything to work you would need to generate SSH keys if you haven’t done so yet. It can be done by running
 ```
@@ -30,7 +30,7 @@ Go to the folder fmanager and run the installation script
 cd fmanager/
 ./fmanager-install.sh
 ```
-modify the file hosts with list of your Flowmon appliances, you can list only their IP at a line or for easier reading in a format which is in the file now. That is a hostname followed by ansible\_host=<IP here>
+Modify the file hosts with list of your Flowmon appliances, you can list only their IP at a line or for easier reading in a format which is in the file now. That is a hostname followed by ansible\_host=<IP here>
 
 You can modify the file somewhere else or use vi on the Flowmon appliance.
 ## Usage
