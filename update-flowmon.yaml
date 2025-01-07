@@ -1,42 +1,42 @@
 ---
-- name: Upgrading Flowmon devices
+- name: Updating Flowmon devices
   hosts: all
   tasks:
-
-    #First check for system update files
-  - name: Check if we have system update available
-    find:
-      paths: /data/packages/
-      patterns: "flowmon-*.tar.gz"
-    register: output
-
-  - name: Write out the findings
-    assert:
-      that:
-        - output.matched
-      fail_msg: "Updates not found"
-      success_msg: "There is system update present on the device."
     
-  - name: Run the update
-    command:
-      cmd: "sudo /usr/sbin/update-device.sh {{ item.path }}"
-    loop: "{{ output.files }}"
-    
-    #When is all good we can install all the plugins updates
+    #First we install all the plugins updates in case it is needed
   - name: Check if we have Flowmon packages update available
     find:
       paths: /data/packages/
       patterns: "flowmonplug-*.tar.gz"
     register: plugins
 
-  - name: Write out the findings
+  - name: Inform if pacakges updates found
     assert:
       that:
         - plugins.matched
       fail_msg: "Updates not found"
       success_msg: "There are plugin updates present on the device."
     
-  - name: Run the update
+  - name: Run the plugin update
     command:
-      cmd: "sudo /usr/sbin/update-device.sh {{ item.path }}"
+      cmd: "sudo /usr/sbin/update-device.sh {{ item.path }} >/tmp/updatedevice.txt 2>/dev/null"
     loop: "{{ plugins.files }}"
+
+    #Then check for system update files as new OS might need a certain Packages installed first
+  - name: Check if we have system update available
+    find:
+      paths: /data/packages/
+      patterns: "flowmon-*.tar.gz"
+    register: output
+
+  - name: Write out system updates
+    assert:
+      that:
+        - output.matched
+      fail_msg: "Updates not found"
+      success_msg: "There is system update present on the device."
+    
+  - name: Run the system update
+    command:
+      cmd: "sudo /usr/sbin/update-device.sh {{ item.path }} >/tmp/updatedevice.txt 2>/dev/null"
+    loop: "{{ output.files }}"
