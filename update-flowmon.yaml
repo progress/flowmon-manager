@@ -1,0 +1,42 @@
+---
+- name: Upgrading Flowmon devices
+  hosts: all
+  tasks:
+
+    #First check for system update files
+  - name: Check if we have system update available
+    find:
+      paths: /data/packages/
+      patterns: "flowmon-*.tar.gz"
+    register: output
+
+  - name: Write out the findings
+    assert:
+      that:
+        - output.matched
+      fail_msg: "Updates not found"
+      success_msg: "There is system update present on the device."
+    
+  - name: Run the update
+    command:
+      cmd: "sudo /usr/sbin/update-device.sh {{ item.path }}"
+    loop: "{{ output.files }}"
+    
+    #When is all good we can install all the plugins updates
+  - name: Check if we have system update available
+    find:
+      paths: /data/packages/
+      patterns: "flowmonplug-*.tar.gz"
+    register: plugins
+
+  - name: Write out the findings
+    assert:
+      that:
+        - plugins.matched
+      fail_msg: "Updates not found"
+      success_msg: "There are plugin updates present on the device."
+    
+  - name: Run the update
+    command:
+      cmd: "sudo /usr/sbin/update-device.sh {{ item.path }}"
+    loop: "{{ plugins.files }}"

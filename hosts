@@ -1,0 +1,2 @@
+[probes]
+testprobe ansible_host=10.100.24.55
