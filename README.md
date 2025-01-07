@@ -15,7 +15,7 @@ Then you need to copy the key to the machines to make sure it will be accessible
 ```
 ssh-copy-id flowmon@10.100.24.55
 ```
-It also needs that all appliances have enabled automatic package update so it will use them. However, you can simply modify the Ansible playbook to upload the files to location and use them but for a simplicity we are using here already downloaded files.
+It also needs that all appliances have enabled Automatic package download (in User interface: Configuration Center > Available packages section) so it will use them. However, you can simply modify the Ansible playbook to upload the files to location and use them but for a simplicity we are using here already downloaded files.
 ## Installation
 Use your favorite SCP program to copy the file to Flowmon Collector to the flowmon user home directory. On Windows you can use for example WinSCP - <https://winscp.net/eng/download.php>
 
