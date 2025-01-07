@@ -23,7 +23,7 @@
     loop: "{{ output.files }}"
     
     #When is all good we can install all the plugins updates
-  - name: Check if we have system update available
+  - name: Check if we have Flowmon packages update available
     find:
       paths: /data/packages/
       patterns: "flowmonplug-*.tar.gz"
