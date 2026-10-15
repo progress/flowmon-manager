@@ -4,6 +4,7 @@ Flowmon Device Manager is a standalone web application for managing multiple
 Flowmon appliances through SSH and REST API. It includes device status,
 performance monitoring, package updates, configuration backups, logs, alerts,
 and credential management.
+It has been presented at our [Customer Validation Program](https://community.progress.com/s/question/0D5Pb00004erjXlKAI/demo-of-flowmon-device-manager-prototype-share-your-feedback) where you can see also recording of it's capabilities.
 
 ## Purpose and support
 
