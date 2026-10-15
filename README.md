@@ -198,7 +198,7 @@ sudo dpkg-query -W flowmon-device-manager
 
 An administrator can download **Manager Diagnostics** from **Logs → Activity
 Log**. Include the package version, operating system, incident time/timezone,
-steps to reproduce, and request ID when reporting an issue. Issue reporting
+steps to reproduce, and request ID when reporting an [issue](https://github.com/progress/flowmon-manager/issues). Issue reporting
 does not imply official support from Progress.
 Review diagnostics before sharing: logs can contain internal device names,
 addresses and package filenames. Never attach databases, credential files,
