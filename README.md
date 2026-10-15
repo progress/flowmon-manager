@@ -4,7 +4,10 @@ Flowmon Device Manager is a standalone web application for managing multiple
 Flowmon appliances through SSH and REST API. It includes device status,
 performance monitoring, package updates, configuration backups, logs, alerts,
 and credential management.
-It has been presented at our [Customer Validation Program](https://community.progress.com/s/question/0D5Pb00004erjXlKAI/demo-of-flowmon-device-manager-prototype-share-your-feedback) where you can see also recording of it's capabilities.
+
+The prototype was presented in the
+[Customer Validation Program (CVP)](https://community.progress.com/s/question/0D5Pb00004erjXlKAI/demo-of-flowmon-device-manager-prototype-share-your-feedback),
+where you can watch a recording of its capabilities and share feedback.
 
 ## Purpose and support
 
@@ -16,30 +19,47 @@ of your configuration and data.
 ## Requirements
 
 - **amd64** (Intel/AMD 64-bit).
-- **Debian 13** or **Ubuntu 24.04** with systemd.
+- **Debian 13**, **Ubuntu 24.04**, or **Rocky Linux 9** with systemd.
+  Rocky requires current 9.4+ repositories providing Python 3.12.
 - A dedicated host or virtual machine/container with TCP **443** and local
   port **8000** available.
 - Network access from the manager to your appliances' HTTPS and SSH ports
   (normally **443** and **22**, configurable per device).
-- Access to the operating system's apt repositories for system dependencies.
+- Access to the operating system's apt or DNF repositories for system dependencies.
 
 Python application dependencies and the compiled web interface are bundled.
 Node.js and internet access to PyPI are not required on the customer host.
 Newer Debian/Ubuntu versions are intended targets, but require validation;
 this package includes dependencies for Python **3.12 and 3.13** only.
+The Rocky RPM bundles Python **3.12** dependencies only and does not use
+Rocky's default Python 3.9.
 
 ## Download and verify
 
-Download these files from the GitHub release:
+Download the package for your operating system from the
+[GitHub releases](https://github.com/progress/flowmon-manager/releases),
+along with its checksum and `README.md` (this guide).
+
+### Debian 13 / Ubuntu 24.04
 
 - `flowmon-device-manager_1.0.0_amd64.deb`
 - `flowmon-device-manager_1.0.0_amd64.deb.sha256`
-- `README.md` (this guide)
 
-In the download directory:
+Verify in the download directory:
 
 ```bash
 sha256sum --check flowmon-device-manager_1.0.0_amd64.deb.sha256
+```
+
+### Rocky Linux 9
+
+- `flowmon-device-manager-1.0.0.el9.x86_64.rpm`
+- `flowmon-device-manager-1.0.0.el9.x86_64.rpm.sha256`
+
+Verify in the download directory:
+
+```bash
+sha256sum --check flowmon-device-manager-1.0.0.el9.x86_64.rpm.sha256
 ```
 
 The result should be `OK`. A checksum detects file corruption; it is not a
@@ -50,6 +70,8 @@ cryptographic signature proving the publisher's identity.
 Use a fresh, dedicated host. The installer does not disable existing nginx
 sites; resolve any existing HTTPS service or virtual-host conflicts first.
 
+### Debian 13 / Ubuntu 24.04
+
 ```bash
 sudo install -m 0644 flowmon-device-manager_1.0.0_amd64.deb /tmp/
 sudo apt install /tmp/flowmon-device-manager_1.0.0_amd64.deb
@@ -59,6 +81,26 @@ sudo systemctl status fdm.service --no-pager
 If apt warns that `_apt` cannot access a package and operates unsandboxed as
 root, move it to `/tmp` as shown above. That warning alone does not mean the
 installation failed.
+
+### Rocky Linux 9
+
+Use current Rocky 9.4+ repositories so DNF can install Python 3.12 and the
+required system dependencies. Node.js and PyPI access are not needed.
+
+```bash
+sudo dnf install ./flowmon-device-manager-1.0.0.el9.x86_64.rpm
+sudo systemctl status fdm.service nginx.service --no-pager
+sudo nginx -t
+```
+
+Use a dedicated manager host, not an existing Flowmon appliance.
+The RPM installs nginx configuration at `/etc/nginx/conf.d/fdm.conf`.
+With SELinux enabled, installation restores file labels and persistently
+enables `httpd_can_network_connect` for nginx's backend connection. This also
+permits outbound connections for other services in the SELinux httpd domain;
+it does not disable SELinux. The setting is retained on removal.
+
+### After installation (all systems)
 
 The installer creates an unprivileged `fdm` service user, a private data
 directory, a random application secret, and an initial self-signed HTTPS
@@ -112,7 +154,8 @@ Do not share private keys or include them in support requests.
 | `/var/lib/fdm/data/` | Database, encrypted credentials, packages, license packs, logs and support bundles |
 | `/var/lib/fdm/venv/` | Generated Python runtime |
 | `/usr/lib/flowmon-device-manager/` | Package-managed application files |
-| `/etc/nginx/sites-available/fdm` | nginx configuration |
+| `/etc/nginx/sites-available/fdm` | Debian/Ubuntu nginx configuration |
+| `/etc/nginx/conf.d/fdm.conf` | Rocky Linux 9 nginx configuration |
 
 Edit configuration with `sudoedit /etc/fdm/fdm.env`, then restart:
 
@@ -148,7 +191,9 @@ customer data. Retain a copy outside the manager host.
 
 ## Upgrade
 
-Back up first, then install the new `.deb` with apt:
+Back up first, then use the commands for your operating system.
+
+### Debian 13 / Ubuntu 24.04
 
 ```bash
 sudo apt install ./flowmon-device-manager_<new-version>_amd64.deb
@@ -166,11 +211,32 @@ If package configuration fails, correct the reported problem and run:
 sudo dpkg --configure flowmon-device-manager
 ```
 
+### Rocky Linux 9
+
+```bash
+sudo dnf upgrade ./flowmon-device-manager-<new-version>.el9.x86_64.rpm
+sudo systemctl status fdm.service nginx.service --no-pager
+# Reinstall the same version:
+sudo dnf reinstall ./flowmon-device-manager-1.0.0.el9.x86_64.rpm
+```
+
+Review any `.rpmnew` nginx configuration before reloading the service.
+
+On Rocky, a failed post-transaction setup may leave the package installed
+but unconfigured. Correct the reported error, then rerun setup:
+
+```bash
+sudo env FDM_PYTHON=python3.12 FDM_PACKAGE_FORMAT=rpm \
+  /usr/lib/flowmon-device-manager/configure configure
+```
+
 Do not use a source-deployment script to update a package installation.
 Existing source installations require a separate migration; the package
 refuses recognized legacy deployments rather than overwriting their data.
 
 ## Remove or reinstall
+
+### Debian 13 / Ubuntu 24.04
 
 ```bash
 sudo apt remove flowmon-device-manager
@@ -178,8 +244,20 @@ sudo apt remove flowmon-device-manager
 sudo apt purge flowmon-device-manager
 ```
 
-Both actions stop the application and remove its nginx enabled-site link.
-**Both deliberately retain customer data, `/etc/fdm` secrets and TLS keys,
+### Rocky Linux 9
+
+```bash
+sudo dnf remove --setopt=clean_requirements_on_remove=False flowmon-device-manager
+```
+
+Disabling dependency autoremove keeps nginx and other system dependencies
+installed. Modified nginx configuration may remain as `.rpmsave`.
+
+### Retained data (all systems)
+
+Removal stops the application and removes its active nginx configuration
+(the enabled-site link on Debian/Ubuntu, or `fdm.conf` on Rocky).
+**All removal options deliberately retain customer data, `/etc/fdm` secrets and TLS keys,
 the generated runtime, and the `fdm` user.** This allows reinstallation to
 retain existing logins and decrypt credentials. Other nginx sites and the
 nginx package remain untouched.
@@ -194,12 +272,21 @@ database while discarding its required `SECRET_KEY`.
 sudo systemctl status fdm.service nginx.service --no-pager
 sudo journalctl -u fdm.service -n 100 --no-pager
 sudo nginx -t
+# Debian/Ubuntu:
 sudo dpkg-query -W flowmon-device-manager
+# Rocky Linux 9:
+rpm -q flowmon-device-manager
 ```
+
+On Rocky, query the version with `rpm -q flowmon-device-manager` instead of
+`dpkg-query`. Check SELinux denials with `sudo ausearch -m AVC -ts recent`
+and firewall access with `sudo firewall-cmd --list-all`. Allow TCP 443 only
+from the intended administration network; port 8000 must stay private.
 
 An administrator can download **Manager Diagnostics** from **Logs → Activity
 Log**. Include the package version, operating system, incident time/timezone,
-steps to reproduce, and request ID when reporting an [issue](https://github.com/progress/flowmon-manager/issues). Issue reporting
+steps to reproduce, and request ID when
+[reporting an issue](https://github.com/progress/flowmon-manager/issues). Issue reporting
 does not imply official support from Progress.
 Review diagnostics before sharing: logs can contain internal device names,
 addresses and package filenames. Never attach databases, credential files,
@@ -215,5 +302,13 @@ Debian 13, including HTTPS access and the unprivileged service user.
 Application runtime checks also passed in Debian 13 and Ubuntu 24.04
 userspaces. Full Ubuntu installation and reboot/removal acceptance testing
 have not yet been completed; newer OS releases are not certified.
+Rocky 9.8 installation and same-version reinstallation passed in a systemd
+container, including HTTPS, bootstrap login, service-user permissions and
+preservation of the database and secrets. That host had SELinux disabled.
+Removal after stopping the app also passed with dependency autoremove
+disabled: application files/listeners were removed, the service was disabled,
+and database/configuration/TLS files were retained unchanged. nginx remained
+healthy. Enforcing SELinux, reboot, cross-version upgrade, removal of a running
+app and reinstallation after removal still require separate acceptance testing.
 
 No additional license is granted by this guide.
