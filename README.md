@@ -1,4 +1,4 @@
-# Flowmon Device Manager 1.0.1
+# Flowmon Device Manager 1.0.3
 
 Flowmon Device Manager is a standalone web application for managing multiple
 Flowmon appliances through SSH and REST API. It includes device status,
@@ -33,18 +33,18 @@ this package includes dependencies for Python **3.12 and 3.13** only.
 
 Download these files from the GitHub release:
 
-- `flowmon-device-manager_1.0.1_amd64.deb` for Debian/Ubuntu, or
-  `flowmon-device-manager-1.0.1.el9.x86_64.rpm` /
-  `flowmon-device-manager-1.0.1.el10.x86_64.rpm` for Enterprise Linux
+- `flowmon-device-manager_1.0.3_amd64.deb` for Debian/Ubuntu, or
+  `flowmon-device-manager-1.0.3.el9.x86_64.rpm` /
+  `flowmon-device-manager-1.0.3.el10.x86_64.rpm` for Enterprise Linux
 - The matching `.sha256` file
 - `README.md` (this guide)
 
 In the download directory:
 
 ```bash
-sha256sum --check flowmon-device-manager_1.0.1_amd64.deb.sha256
+sha256sum --check flowmon-device-manager_1.0.3_amd64.deb.sha256
 # Or, for example, on Enterprise Linux 9:
-sha256sum --check flowmon-device-manager-1.0.1.el9.x86_64.rpm.sha256
+sha256sum --check flowmon-device-manager-1.0.3.el9.x86_64.rpm.sha256
 ```
 
 The result should be `OK`. A checksum detects file corruption; it is not a
@@ -56,8 +56,8 @@ Use a fresh, dedicated host. The installer does not disable existing nginx
 sites; resolve any existing HTTPS service or virtual-host conflicts first.
 
 ```bash
-sudo install -m 0644 flowmon-device-manager_1.0.1_amd64.deb /tmp/
-sudo apt install /tmp/flowmon-device-manager_1.0.1_amd64.deb
+sudo install -m 0644 flowmon-device-manager_1.0.3_amd64.deb /tmp/
+sudo apt install /tmp/flowmon-device-manager_1.0.3_amd64.deb
 sudo systemctl status fdm.service --no-pager
 ```
 
@@ -72,9 +72,9 @@ On Enterprise Linux, use the matching RPM instead:
 # Review this host-wide SELinux boolean before enabling it.
 sudo setsebool -P httpd_can_network_connect 1
 # EL 9 (requires 9.4+ repositories with Python 3.12):
-sudo dnf install ./flowmon-device-manager-1.0.1.el9.x86_64.rpm
+sudo dnf install ./flowmon-device-manager-1.0.3.el9.x86_64.rpm
 # EL 10:
-sudo dnf install ./flowmon-device-manager-1.0.1.el10.x86_64.rpm
+sudo dnf install ./flowmon-device-manager-1.0.3.el10.x86_64.rpm
 sudo systemctl status fdm.service --no-pager
 ```
 
@@ -168,6 +168,26 @@ Keep `PRODUCTION=true` for secure session cookies.
 Optional `COMMUNITY_PROXY_URL=http://proxy.example.com:3128` routes community
 discovery and package downloads through a proxy. Store authenticated proxy URLs
 only in the private configuration file.
+
+For optional OpenID Connect SSO, register an HTTPS confidential client with
+authorization code flow and PKCE S256 (for example with Authentik). Set
+`OIDC_ENABLED=true`, `OIDC_ISSUER`, `OIDC_CLIENT_ID`, `OIDC_CLIENT_SECRET`,
+and `OIDC_REDIRECT_URI=https://<fdm-host>/api/auth/oidc/callback`; register
+the exact same callback with the provider. Keep `PRODUCTION=true`. The issuer
+must match the provider's discovery document exactly, including any trailing
+slash. The server must trust and reach the provider over HTTPS.
+Authorization codes appear in callback URLs. Ensure existing nginx sites and
+other reverse proxies do not log the callback query string; the supplied nginx
+configuration disables access logging for `/api/auth/oidc/callback`.
+
+The default `OIDC_AUTO_PROVISION=false` requires an admin to link an existing
+FDM account to the provider's exact `sub` via **Settings → Users → SSO
+identities**. With `OIDC_AUTO_PROVISION=true`, SSO-only users are created
+without administrator rights. Grant admin access locally only. Local login
+remains available; retain a protected local admin account for recovery. Logout
+ends the FDM session only. Provider-side disablement takes effect at the next
+sign-in or when the FDM session expires; disable the user locally to end active
+FDM sessions immediately.
 
 Community Downloads now offers **Stable** (default) and **Beta** release channels.
 Beta releases are pre-release software and should be evaluated with caution.
@@ -267,6 +287,21 @@ or newer installed version is not eligible for the selected package.
 
 ## Release validation
 
+Version 1.0.3 passed fresh installation on Debian 13.7 and upgrades from 1.0.1
+on Rocky Linux 9.8 and 10.2. All three passed same-version reinstallation,
+systemd/nginx/HTTPS and unprivileged local authentication/API smoke checks,
+served frontend feature checks, configuration/TLS/registry preservation,
+and decryption of temporary REST/SSH credentials after reinstallation.
+Community refresh returned all six components, including through the existing
+Squid proxy on the Rocky hosts. The proxy configuration/service was preserved.
+Test accounts and credentials were removed afterward.
+
+SSO provider sign-in was not tested; OIDC remained disabled. SELinux was
+disabled on both Rocky hosts. Ubuntu installation, SELinux-enforcing behavior,
+reboot, removal and purge remain unverified for 1.0.3.
+
+Historical validation:
+
 Version 1.0.1 was installed on Rocky Linux 9 with systemd/nginx, HTTPS access,
 the real unprivileged service user, preserved configuration, and a successful
 bootstrap-login/password-change smoke test. SELinux was disabled on that test host.
@@ -276,8 +311,7 @@ not be certified there because of rootless privilege restrictions.
 
 Earlier DEB installer validation passed on Debian 13, with application runtime
 checks in Debian 13 and Ubuntu 24.04 userspaces. Version 1.0.1 DEB metadata and
-payload checks passed. Full Ubuntu/EL 10 installation, SELinux-enforcing,
-reboot, upgrade/removal and purge acceptance testing remain required before
-production certification; newer OS releases are not certified.
+payload checks passed. These earlier userspace checks did not certify full
+systemd/SELinux or lifecycle behavior; newer OS releases are not certified.
 
 No additional license is granted by this guide.
